@@ -45,25 +45,26 @@ public class LaunchThread extends Thread {
 		InetAddress local;
 		
 		try {
-			//local = InetAddress.getLocalHost();
-			//NetworkInterface ni = NetworkInterface.getByInetAddress(local);
-            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-            while(networkInterfaces.hasMoreElements())
-            {
-                NetworkInterface network = networkInterfaces.nextElement();
-                //System.out.println("network : " + network);
-                byte[] mac = network.getHardwareAddress();
-                if(network.getHardwareAddress() != null)
-                {
-                    hwAddr = network.getHardwareAddress();
-                    break;
-                }
-            }
+			/*
+			local = InetAddress.getLocalHost();
+			NetworkInterface ni = NetworkInterface.getByInetAddress(local);
 			
-			//if (ni != null)
-			//	hwAddr = ni.getHardwareAddress();
-		//} catch (UnknownHostException e) {
-		//	e.printStackTrace();
+			if (ni != null)
+				hwAddr = ni.getHardwareAddress();
+				
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			*/
+			Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+			while(networkInterfaces.hasMoreElements())
+			{
+				NetworkInterface network = networkInterfaces.nextElement();
+				System.out.println("network: " + network);
+				if(network.getHardwareAddress() != null) 
+				{
+					hwAddr = network.getHardwareAddress();
+				}
+			}
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
@@ -109,12 +110,16 @@ public class LaunchThread extends Thread {
 		try {
 			// DNS Emitter (Bonjour)
 			byte[] hwAddr = getHardwareAdress();
-						
-			// Check if password is set
-			if(password == null)
-				emitter = new BonjourEmitter(name, getStringHardwareAdress(hwAddr), port, false);
-			else
-				emitter = new BonjourEmitter(name, getStringHardwareAdress(hwAddr), port, true);
+			try {
+				// Check if password is set
+				if(password == null)
+					emitter = new BonjourEmitter(name, getStringHardwareAdress(hwAddr), port, false);
+				else
+					emitter = new BonjourEmitter(name, getStringHardwareAdress(hwAddr), port, true);
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
 			
 			System.out.println("announced ["+name+" @ "+getStringHardwareAdress(hwAddr)+"]");
 			

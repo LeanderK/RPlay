@@ -1,25 +1,18 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.StringReader;
+import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMReader;
+
+import javax.crypto.Cipher;
+import java.io.*;
+import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.security.KeyPair;
+import java.security.MessageDigest;
 import java.security.Security;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.crypto.Cipher;
-import java.security.MessageDigest;
-import java.math.BigInteger;
-
-import org.apache.commons.codec.binary.Base64;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
 
 
 /**
@@ -122,8 +115,6 @@ public class RTSPResponder extends Thread {
 			}
 		}
         
-        
-        
 		// Apple Challenge-Response field if needed
     	String challenge;
     	if( (challenge = packet.valueOfHeader("Apple-Challenge")) != null){
@@ -171,10 +162,7 @@ public class RTSPResponder extends Thread {
     	
 		// Paquet request
 		String REQ = packet.getReq();
-        if(REQ == null)
-        {
-
-        } else if(REQ.contentEquals("OPTIONS")){
+        if(REQ.contentEquals("OPTIONS")){
         	// The response field
         	response.append("Public", "ANNOUNCE, SETUP, RECORD, PAUSE, FLUSH, TEARDOWN, OPTIONS, GET_PARAMETER, SET_PARAMETER");
 
@@ -224,7 +212,7 @@ public class RTSPResponder extends Thread {
         	response.append("Transport", packet.valueOfHeader("Transport") + ";server_port=" + serv.getServerPort());
         			
         	// ??? Why ???
-        	response.append("Session", "1");
+        	response.append("Session", "DEADBEEF");
         } else if (REQ.contentEquals("RECORD")){
 //        	Headers	
 //        	Range: ntp=0-
@@ -239,24 +227,13 @@ public class RTSPResponder extends Thread {
         	response.append("Connection", "close");
         	
         } else if (REQ.contentEquals("SET_PARAMETER")){
-            if(packet.valueOfHeader("Content-Type").contentEquals("text/parameters"))
-            {
-                if(packet.getHeaders().contains("volume")) {
-                    // Timing port
-                    Pattern p = Pattern.compile("volume: (.+)");
-                    Matcher m = p.matcher(packet.getContent());
-                    if(m.find()){
-                        double volume = (double) Math.pow(10.0,0.05*Double.parseDouble(m.group(1)));
-                        serv.setVolume(65536.0 * volume);
-                        System.out.println("Volume" + 65536.0 * volume);
-                    }
-                } else if(packet.getHeaders().contains("progress")) {
-                    System.out.println("Progress" + packet.valueOfHeader("progress"));
-                }
-            }
-        	else {
-                System.out.println("SET: " + packet.valueOfHeader("Content-Type"));
-            }
+        	// Timing port
+        	Pattern p = Pattern.compile("volume: (.+)");
+        	Matcher m = p.matcher(packet.getContent());
+        	if(m.find()){
+                double volume = (double) Math.pow(10.0,0.05*Double.parseDouble(m.group(1)));
+                serv.setVolume(65536.0 * volume);
+        	}
         	
         } else {
         	System.out.println("REQUEST(" + REQ + "): Not Supported Yet!");
@@ -308,7 +285,7 @@ public class RTSPResponder extends Thread {
 	        KeyPair pObj = (KeyPair) pemReader.readObject(); 
 
 	        // Encrypt
-	        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+	        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding"); 
 	        cipher.init(Cipher.ENCRYPT_MODE, pObj.getPrivate());
 	        return cipher.doFinal(array);
 
@@ -350,7 +327,7 @@ public class RTSPResponder extends Thread {
 	public void run() {
 		try {
 			do {
-				//System.out.println("listening packets ... ");
+				System.out.println("listening packets ... ");
 				// feed buffer until packet completed
 				StringBuffer packet = new StringBuffer();
 				int ret = 0;

@@ -18,65 +18,55 @@ public class PCMPlayer extends Thread{
 	private short rand_a, rand_b;
 	private AudioBuffer audioBuf;
 	private boolean stopThread = false;
-    private static PCMPlayer player;
 	
 	public PCMPlayer(AudioSession session, AudioBuffer audioBuf){
 		super();
 		this.session = session;
 		this.audioBuf = audioBuf;
-		//if(player != null && player.isAlive()) player.interrupt();
+		
         try {
-            if(player != null && player.isAlive()) {
-                dataLine = player.dataLine;
-            } else {
-                audioFormat = new AudioFormat(44100, 16, 2, true, true);
-                info = new DataLine.Info(SourceDataLine.class, audioFormat);
-                dataLine = (SourceDataLine) AudioSystem.getLine(info);
-                dataLine.open(audioFormat);
-                dataLine.start();
-            }
+            audioFormat = new AudioFormat(44100, 16, 2, true, true);
+            info = new DataLine.Info(SourceDataLine.class, audioFormat);
+			dataLine = (SourceDataLine) AudioSystem.getLine(info);
+	        dataLine.open(audioFormat);
+	        dataLine.start();
 
         } catch (LineUnavailableException e) {
 			e.printStackTrace();
 		}
-        player = this;
+
+        
 	}
 	
 	public void run(){
-        try {
-            boolean fin = stopThread;
+		boolean fin = stopThread;
+		
+		while(!fin){
+			int[] buf = audioBuf.getNextFrame();
+			if(buf==null){
+				continue;
+			}
+			
+			int[] outbuf = new int[session.OUTFRAME_BYTES()];
+			int k = stuff_buffer(session.getFilter().bf_playback_rate, buf, outbuf);
 
-            while (!fin) {
-                int[] buf = audioBuf.getNextFrame();
-                if (buf == null) {
-                    continue;
-                }
-
-                int[] outbuf = new int[session.OUTFRAME_BYTES()];
-                int k = stuff_buffer(session.getFilter().bf_playback_rate, buf, outbuf);
-
-                byte[] input = new byte[outbuf.length * 2];
-
-                int j = 0;
-                for (int i = 0; i < outbuf.length; i++) {
-                    input[j++] = (byte) (outbuf[i] >> 8);
-                    input[j++] = (byte) (outbuf[i]);
-                }
-
-                dataLine.write(input, 0, k * 4);
-
-                // Stop
-                synchronized (this) {
-                    Thread.yield();
-                    fin = this.stopThread;
-                }
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            dataLine.close();
-        }
-    }
+			byte[] input = new byte[outbuf.length*2];
+			
+			int j = 0;
+			for(int i=0; i<outbuf.length; i++){
+				input[j++] = (byte)(outbuf[i] >> 8);
+				input[j++] = (byte)(outbuf[i]);
+			}
+			
+			dataLine.write(input, 0, k*4);
+			
+			// Stop
+			synchronized(this) {
+				Thread.yield();
+				fin = this.stopThread;
+			} 
+		}
+	}
 	
 	public synchronized void stopThread(){
 		this.stopThread = true;
