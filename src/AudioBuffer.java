@@ -77,7 +77,7 @@ public class AudioBuffer {
 	 * Returns the next ready frame. If none, waiting for one
 	 * @return
 	 */
-	public int[] getNextFrame(){
+	public int[] getNextFrame() throws InterruptedException {
 	    synchronized (lock) {	    	
 			actualBufSize = writeIndex-readIndex;	// Packets in buffer
 		    if(actualBufSize<0){	// If loop
@@ -101,7 +101,7 @@ public class AudioBuffer {
 					// Underrun: stream reset
 					session.resetFilter();
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					throw e;
 				}
 				
 				return null;
@@ -154,13 +154,13 @@ public class AudioBuffer {
 	    // Ring buffer may be implemented in a Hashtable in java (simplier), but is it fast enough?		
 		// We lock the thread
 		synchronized(lock){
-		
+
 			if(!synced){
 				writeIndex = seqno;
 				readIndex = seqno;
 				synced = true;
 			}
-	
+
 			@SuppressWarnings("unused")
 			int outputSize = 0;
 			if (seqno == writeIndex){													// Packet we expected
@@ -236,7 +236,7 @@ public class AudioBuffer {
 		// Init AES encryption
 		try {
 			k = new SecretKeySpec(session.getAESKEY(), "AES");
-			c = Cipher.getInstance("AES/CBC/NoPadding");
+			c = Cipher.getInstance("AES/CBC/NOPADDING");
 			c.init(Cipher.DECRYPT_MODE, k, new IvParameterSpec(session.getAESIV()));
 		} catch (Exception e) {
 			e.printStackTrace();
