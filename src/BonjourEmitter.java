@@ -23,11 +23,13 @@ public class BonjourEmitter {
 		    txtRec.put("ch", "2");
 		    txtRec.put("tp", "UDP");
 		    txtRec.put("sm", "false");
-		    txtRec.put("sv", "false");
+		    //txtRec.put("sv", "false");
 		    txtRec.put("ek", "1");
 		    txtRec.put("et", "0,1");
 		    txtRec.put("cn", "0,1");
 		    txtRec.put("vn", "3");
+            txtRec.put("da", "true");
+            txtRec.put("md", "0,1,2");
 		    		   
 		    // Il faut un serial bidon pour se connecter
 		    if (identifier == null) {

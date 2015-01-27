@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,9 +14,11 @@ public class RTSPPacket {
 	private String directory;
 	private String rtspVersion;
 	private String content;
-	private Vector<String> headers;
+    private Vector<String> headers;
 	private Vector<String> headerContent;
 	private String rawPacket;
+
+    private byte[] data = null;
 
 	public RTSPPacket(String packet){
 		// Init arrays
@@ -32,7 +35,10 @@ public class RTSPPacket {
         	directory = m.group(2);
         	rtspVersion = m.group(3);
         }
-        
+        if(req != null && req.contentEquals("SET_PARAMETER")) {
+            boolean as = true;
+        }
+
         // Header fields
         p = Pattern.compile("^([\\w-]+):\\W(.+)\r\n", Pattern.MULTILINE);
         m = p.matcher(packet);  
@@ -40,6 +46,16 @@ public class RTSPPacket {
         	headers.add(m.group(1));
         	headerContent.add(m.group(2));
         }
+
+        //progress workaround
+        p = Pattern.compile("^(progress):\\W(.+)", Pattern.MULTILINE);
+        m = p.matcher(packet);
+        while(m.find()){
+            headers.add(m.group(1));
+            headerContent.add(m.group(2));
+        }
+
+
         
         // Content if present or null if not
         p = Pattern.compile("\r\n\r\n(.+)", Pattern.DOTALL);
@@ -49,6 +65,20 @@ public class RTSPPacket {
         	if(content.isEmpty()){
         		content = null;
         	}
+        }
+
+        //data if present
+        if (headers.contains("Content-Length")) {
+            String[] split = packet.split("\r\n\r\n");
+            int size;
+            try {
+                size = Integer.valueOf(valueOfHeader("Content-Length"));
+            } catch (NumberFormatException e) {
+                return;
+            }
+            String temp = split[split.length-1];
+            data = temp.getBytes();
+            data = Arrays.copyOf(data, size);
         }
 	}
 	
@@ -83,7 +113,19 @@ public class RTSPPacket {
 		}
 		return headerContent.elementAt(i);
 	}
-	
+
+    public Vector<String> getHeaders() {
+        return headers;
+    }
+
+    public Vector<String> getheaderContent() {
+        return headerContent;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
 	@Override
 	public String toString() {
 		return " <- " + rawPacket.replaceAll("\r\n", "\r\n <- ");

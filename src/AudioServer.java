@@ -36,11 +36,6 @@ public class AudioServer implements UDPDelegate{
     
     /**
      * Constructor. Initiate instances vars
-     * @param aesiv
-     * @param aeskey
-     * @param fmtp
-     * @param controlPort
-     * @param timingPort
      */
 	public AudioServer(AudioSession session){		
 		// Init instance var
@@ -49,6 +44,9 @@ public class AudioServer implements UDPDelegate{
 		// Init functions
 		audioBuf = new AudioBuffer(session, this);
 		this.initRTP();
+        if(this.player != null) {
+            player.interrupt();
+        }
 		player = new PCMPlayer(session, audioBuf);
 		player.start();
 	}
@@ -125,8 +123,8 @@ public class AudioServer implements UDPDelegate{
 	/**
 	 * Ask iTunes to resend packet
 	 * FUNCTIONAL??? NO PROOFS
-	 * @param first
-	 * @param last
+	 * @param first writeIndex
+	 * @param last seqnum
 	 */
 	public void request_resend(int first, int last) {
 		System.out.println("Resend Request: " + first + "::" + last);
@@ -135,8 +133,28 @@ public class AudioServer implements UDPDelegate{
 		}
 		
 		int len = last - first + 1;
-	    byte[] request = new byte[] { (byte) 0x80, (byte) (0x55|0x80), 0x01, 0x00, (byte) ((first & 0xFF00) >> 8), (byte) (first & 0xFF), (byte) ((len & 0xFF00) >> 8), (byte) (len & 0xFF)};
-	    
+
+	    byte[] request = new byte[] {
+                (byte) 0x80,
+                (byte) (0x55|0x80),
+                0x01,
+                0x00,
+                (byte) ((first & 0xFF00) >> 8),
+                (byte) (first & 0xFF),
+                (byte) ((len & 0xFF00) >> 8),
+                (byte) (len & 0xFF)};
+
+        /*char[] request = new char[8];
+            request[0] = 0x80;
+            request[1] = 0x55|0x80;
+        /*byte[] request = new byte[] { (byte) 0x80,
+                (byte) (0x55|0x80),
+                (byte) ((first & 0xFF00) >> 8),
+                (byte) (first & 0xFF),
+                (byte) ((len & 0xFF00) >> 8),
+                (byte) (len & 0xFF)};
+                */
+
 		try {
 			DatagramPacket temp = new DatagramPacket(request, request.length, rtpClient, session.getControlPort());
 			csock.send(temp);

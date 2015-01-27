@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 
 
 /**
@@ -44,13 +45,25 @@ public class LaunchThread extends Thread {
 		InetAddress local;
 		
 		try {
-			local = InetAddress.getLocalHost();
-			NetworkInterface ni = NetworkInterface.getByInetAddress(local);
+			//local = InetAddress.getLocalHost();
+			//NetworkInterface ni = NetworkInterface.getByInetAddress(local);
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while(networkInterfaces.hasMoreElements())
+            {
+                NetworkInterface network = networkInterfaces.nextElement();
+                //System.out.println("network : " + network);
+                byte[] mac = network.getHardwareAddress();
+                if(network.getHardwareAddress() != null)
+                {
+                    hwAddr = network.getHardwareAddress();
+                    break;
+                }
+            }
 			
-			if (ni != null)
-				hwAddr = ni.getHardwareAddress();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
+			//if (ni != null)
+			//	hwAddr = ni.getHardwareAddress();
+		//} catch (UnknownHostException e) {
+		//	e.printStackTrace();
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}

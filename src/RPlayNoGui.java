@@ -2,9 +2,9 @@
 public class RPlayNoGui {
 
 	public static void main(String[] args) {
-		
-		
-		if(args.length == 1) {
+
+        System.out.println("Java port of shairport");
+        if(args.length == 1) {
 			// Name only
 			new LaunchThread(args[0]).start();
 		} else if(args.length == 2) {
