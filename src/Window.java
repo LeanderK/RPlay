@@ -23,7 +23,7 @@ public class Window implements ActionListener {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		new RPlay();
+		new Rplay();
 	}
 	
 	public Window() {

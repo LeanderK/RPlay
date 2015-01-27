@@ -5,7 +5,7 @@
  */
 
 //
-public class RPlay{
+public class Rplay {
 
 	/**
 	 * @param args
