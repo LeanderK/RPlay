@@ -1,12 +1,9 @@
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.Enumeration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 
 /**
@@ -20,6 +17,8 @@ public class LaunchThread extends Thread {
 	private String name;
 	private String password;
 	private boolean stopThread = false;
+    private Consumer<Socket> onConnectCallback = null;
+    private ExecutorService threadPool = Executors.newFixedThreadPool(1);
 
 	/**
 	 * Constructor
@@ -42,19 +41,8 @@ public class LaunchThread extends Thread {
 	
 	private byte[] getHardwareAdress() {
 		byte[] hwAddr = null;
-		InetAddress local;
 		
 		try {
-			/*
-			local = InetAddress.getLocalHost();
-			NetworkInterface ni = NetworkInterface.getByInetAddress(local);
-			
-			if (ni != null)
-				hwAddr = ni.getHardwareAddress();
-				
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			*/
 			Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
 			while(networkInterfaces.hasMoreElements())
 			{
@@ -121,7 +109,7 @@ public class LaunchThread extends Thread {
 				e.printStackTrace();
 			}
 			
-			System.out.println("announced ["+name+" @ "+getStringHardwareAdress(hwAddr)+"]");
+			System.out.println("announced [" + name + " @ " + getStringHardwareAdress(hwAddr) + "]");
 			
 			// We listen for new connections
 			try {
@@ -139,6 +127,8 @@ public class LaunchThread extends Thread {
 				try {
 					Socket socket = servSock.accept();
 					System.out.println("accepted connection from " + socket.toString());
+                    if (onConnectCallback != null)
+                        onConnectCallback.accept(socket);
 
 					// Check if password is set
 					if(password == null)
@@ -166,4 +156,12 @@ public class LaunchThread extends Thread {
 	public synchronized void stopThread() {
 		stopThread = true;
 	}
+
+    /**
+     * sets the Callback for accepting a new Connection
+     * @param onConnectCallback the Callback
+     */
+    public void setOnConnectCallback(Consumer<Socket> onConnectCallback) {
+        this.onConnectCallback = onConnectCallback;
+    }
 }
